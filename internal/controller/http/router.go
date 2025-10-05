@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 
+	"github.com/Magic-B/books-library/internal/usecase/book/createbook"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -16,7 +17,7 @@ func Router() http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Get("/book", func(w http.ResponseWriter, r *http.Request) {})
+			r.Post("/books", createbook.HttpV1)
 		})
 	})
 

@@ -4,10 +4,13 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Magic-B/books-library/internal/adapter/postgres"
 	"github.com/Magic-B/books-library/internal/config"
 	"github.com/Magic-B/books-library/internal/controller/http"
+	"github.com/Magic-B/books-library/internal/usecase/book/createbook"
 	"github.com/Magic-B/books-library/pkg/httpserver"
 	"github.com/Magic-B/books-library/pkg/logger/slg"
 )
@@ -32,12 +35,22 @@ func main() {
 	defer pgPool.Close()
 	logger.Info("postgres has been inited")
 
+	initUscases(pgPool.Repos)
+
 	//http
 	router := http.Router()
 	server := httpserver.New(router, cfg.HttpServer)
-	
+
 	logger.Info("run http server")
 	server.Run()
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+
+	<-sig
+
+	pgPool.Close()
+	server.Close(ctx)
 }
 
 func loggerSetup(env string) *slog.Logger {
@@ -53,4 +66,8 @@ func loggerSetup(env string) *slog.Logger {
 	}
 
 	return log
+}
+
+func initUscases(pg *postgres.Repos) {
+	createbook.New(pg.Book)
 }

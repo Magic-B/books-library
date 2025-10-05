@@ -24,16 +24,18 @@ type Config struct {
 }
 
 type Pool struct {
-	pool *pgxpool.Pool
+	pool  *pgxpool.Pool
+	Repos *Repos
 }
 
 var operation = op.Namespace("adapter.postgres")
 
 func New(ctx context.Context, cfg Config) (*Pool, error) {
 	op := operation("New")
-	databaseUrl := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
 
-	pgxCfg, err := pgxpool.ParseConfig(databaseUrl)
+	pgxCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, apperr.Wrap(op, err)
 	}
@@ -43,20 +45,22 @@ func New(ctx context.Context, cfg Config) (*Pool, error) {
 	pgxCfg.MaxConnLifetime = cfg.MaxConnLifetime
 	pgxCfg.MaxConnIdleTime = cfg.MaxConnIdleTime
 
-	p, err := pgxpool.NewWithConfig(ctx, pgxCfg)
-
+	pool, err := pgxpool.NewWithConfig(ctx, pgxCfg)
 	if err != nil {
 		return nil, apperr.Wrap(op, err)
 	}
-	
+
 	healthCtx, cancel := context.WithTimeout(ctx, cfg.HealthTimeout)
 	defer cancel()
-	if err := p.Ping(healthCtx); err != nil {
-		p.Close()
+	if err := pool.Ping(healthCtx); err != nil {
+		pool.Close()
 		return nil, apperr.Wrap(op, err)
 	}
 
-	return &Pool{pool: p}, nil
+	return &Pool{
+		pool:  pool,
+		Repos: NewRepos(pool),
+	}, nil
 }
 
 func (p *Pool) Close() {
