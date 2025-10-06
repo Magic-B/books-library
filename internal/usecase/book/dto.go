@@ -4,6 +4,10 @@ import "github.com/Magic-B/books-library/internal/domain"
 
 // Create operation
 type CreateReq struct {
+	Book BookInput `json:"book"`
+}
+
+type BookInput struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }

@@ -13,15 +13,15 @@ import (
 )
 
 type App struct {
-	Name string `env:"APP_NAME" env-required:"true"`
+	Name    string `env:"APP_NAME" env-required:"true"`
 	Version string `env:"APP_VERSION" env-required:"true"`
-	Env string `env:"APP_ENV" env-required:"true"`
+	Env     string `env:"APP_ENV" env-required:"true"`
 }
 
 type Config struct {
-	App App
+	App        App
 	HttpServer httpserver.Config
-	Postgres postgres.Config
+	Postgres   postgres.Config
 }
 
 var operation = op.Namespace("config")
@@ -29,7 +29,7 @@ var operation = op.Namespace("config")
 func readConfig[T any](cfg *T, name string) {
 	op := operation("readConfig")
 	if err := cleanenv.ReadEnv(cfg); err != nil {
-		log.Fatal(apperr.Wrap(op, err, fmt.Sprintf("%s config", name)))
+		log.Fatal(apperr.OpWrap(op, err, fmt.Sprintf("%s config", name)))
 	}
 }
 
@@ -37,21 +37,21 @@ func MustLoad() *Config {
 	op := operation("MustLoad")
 
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(apperr.Wrap(op, err))
+		log.Fatal(apperr.OpWrap(op, err))
 	}
-	
+
 	var app App
 	readConfig(&app, "app")
-	
+
 	var http httpserver.Config
 	readConfig(&http, "httpserver")
-	
+
 	var postgres postgres.Config
 	readConfig(&postgres, "postgres")
 
 	return &Config{
-		App: app,
+		App:        app,
 		HttpServer: http,
-		Postgres: postgres,
+		Postgres:   postgres,
 	}
 }

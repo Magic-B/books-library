@@ -2,22 +2,26 @@ package book
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/Magic-B/books-library/internal/usecase/book"
 	"github.com/Magic-B/books-library/pkg/httpserver"
+	"github.com/Magic-B/books-library/pkg/logger/slg"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type Handler struct {
 	bookUsecase *book.Usecase
+	logger      *slog.Logger
 }
 
-func NewHandler(bookUsecase *book.Usecase) *Handler {
+func NewHandler(bookUsecase *book.Usecase, logger *slog.Logger) *Handler {
 	return &Handler{
 		bookUsecase: bookUsecase,
+		logger:      logger,
 	}
 }
 
@@ -32,6 +36,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.bookUsecase.Create(r.Context(), req)
 	if err != nil {
+		h.logger.Error("failed to create book", slg.Error(err))
 		status, msg := HandleError(err)
 		w.WriteHeader(status)
 		render.JSON(w, r, httpserver.Error(msg))
@@ -53,6 +58,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.bookUsecase.GetByID(r.Context(), id)
 	if err != nil {
+		h.logger.Error("failed to get book", slg.Error(err))
 		status, msg := HandleError(err)
 		w.WriteHeader(status)
 		render.JSON(w, r, httpserver.Error(msg))

@@ -4,15 +4,15 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Magic-B/books-library/internal/app"
 	"github.com/Magic-B/books-library/internal/controller/http/middleware"
 	bookHandler "github.com/Magic-B/books-library/internal/controller/http/v1/book"
-	"github.com/Magic-B/books-library/internal/usecase/book"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 type RouterDeps struct {
-	BookUsecase *book.Usecase
+	Usecases *app.Usecases
 	Logger      *slog.Logger
 }
 
@@ -20,6 +20,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimiddleware.Recoverer)
+	r.Use(chimiddleware.RequestID)
 	r.Use(middleware.Logger(deps.Logger))
 
 	r.Get("/live", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
@@ -27,7 +28,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			bookH := bookHandler.NewHandler(deps.BookUsecase)
+			bookH := bookHandler.NewHandler(deps.Usecases.Book, deps.Logger)
 			r.Route("/books", func(r chi.Router) {
 				r.Post("/", bookH.Create)
 				r.Get("/{id}", bookH.GetByID)

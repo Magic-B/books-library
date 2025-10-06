@@ -15,8 +15,11 @@ func Logger(logger *slog.Logger) func(next http.Handler) http.Handler {
 
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
+			requestID := middleware.GetReqID(r.Context())
+
 			defer func() {
 				logger.Info("request completed",
+					slog.String("request_id", requestID),
 					slog.String("method", r.Method),
 					slog.String("path", r.URL.Path),
 					slog.Int("status", ww.Status()),
@@ -26,6 +29,7 @@ func Logger(logger *slog.Logger) func(next http.Handler) http.Handler {
 				)
 			}()
 
+			ww.Header().Set("X-Request-ID", requestID)
 			next.ServeHTTP(ww, r)
 		})
 	}

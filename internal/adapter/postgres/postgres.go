@@ -37,7 +37,7 @@ func New(ctx context.Context, cfg Config) (*Pool, error) {
 
 	pgxCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, apperr.Wrap(op, err)
+		return nil, apperr.OpWrap(op, err)
 	}
 
 	pgxCfg.MaxConns = cfg.MaxConns
@@ -47,14 +47,14 @@ func New(ctx context.Context, cfg Config) (*Pool, error) {
 
 	pool, err := pgxpool.NewWithConfig(ctx, pgxCfg)
 	if err != nil {
-		return nil, apperr.Wrap(op, err)
+		return nil, apperr.OpWrap(op, err)
 	}
 
 	healthCtx, cancel := context.WithTimeout(ctx, cfg.HealthTimeout)
 	defer cancel()
 	if err := pool.Ping(healthCtx); err != nil {
 		pool.Close()
-		return nil, apperr.Wrap(op, err)
+		return nil, apperr.OpWrap(op, err)
 	}
 
 	return &Pool{
