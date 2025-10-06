@@ -16,9 +16,9 @@ func New(pool *pgxpool.Pool) *Repo {
 }
 
 func (r *Repo) Create(ctx context.Context, b *domain.Book) error {
-	const q = `INSERT INTO books (title, description) VALUES ($1, $2) RETURNING id`
+	const q = `INSERT INTO books (title, description) VALUES ($1, $2) RETURNING id, created_at, updated_at`
 
-	err := r.pool.QueryRow(ctx, q, b.Title, b.Description).Scan(&b.ID)
+	err := r.pool.QueryRow(ctx, q, b.Title, b.Description).Scan(&b.ID, &b.CreatedAt, &b.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -26,17 +26,14 @@ func (r *Repo) Create(ctx context.Context, b *domain.Book) error {
 	return nil
 }
 
-
-func (r *Repo) Get(ctx context.Context, id int) (domain.Book, error) {
-	const q = `SELECT id, title, description FROM books WHERE id=$1`
+func (r *Repo) GetByID(ctx context.Context, id int) (domain.Book, error) {
+	const q = `SELECT id, title, description, created_at, updated_at FROM books WHERE id=$1`
 
 	var b domain.Book
-	err := r.pool.QueryRow(ctx, q, id).Scan(&b.ID, &b.Title, &b.Description)
+	err := r.pool.QueryRow(ctx, q, id).Scan(&b.ID, &b.Title, &b.Description, &b.CreatedAt, &b.UpdatedAt)
 	if err != nil {
 		return domain.Book{}, err
 	}
 
 	return b, nil
 }
-
-
